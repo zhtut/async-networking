@@ -15,14 +15,14 @@ open class Response {
     /// 请求成功的
     public init(request: Request,
                 body: Data,
-                urlResponse: HTTPURLResponse) {
+                httpResponse: HTTPURLResponse) {
         if let start = request.start {
             let duration = Date().timeIntervalSince1970 * 1000.0 - start
             self.duration = duration
         }
         self.request = request
         self.body = body
-        self.urlResponse = urlResponse
+        self.httpResponse = httpResponse
     }
     
     /// 原始的网络请求，最终发出的网络请求就是这个
@@ -32,7 +32,7 @@ open class Response {
     open var body: Data
     
     /// 原始返回的response对象，如果要查看网络请求的statusCode是不是200，可以在这查看，包括返回的header信息也在这里
-    open var urlResponse: HTTPURLResponse
+    open var httpResponse: HTTPURLResponse
     
     /// 请求出结果花费了多少时间
     open var duration: TimeInterval?
@@ -102,7 +102,7 @@ public extension Response {
     
     /// 请求是否成功
     var succeed: Bool {
-        let statusCode = urlResponse.statusCode
+        let statusCode = httpResponse.statusCode
         return statusCode >= 200 && statusCode < 300
     }
 }
@@ -124,7 +124,7 @@ extension Response {
         let response = self
         var message = request.log
         message.append("\n------Response:\(response.duration ?? -1)ms\n")
-        message.append("StatusCode:\(urlResponse.statusCode)\n")
+        message.append("StatusCode:\(httpResponse.statusCode)\n")
         if let bodyString = await bodyString() {
             // 最长打印512个字符
             if bodyString.count > 10240 {

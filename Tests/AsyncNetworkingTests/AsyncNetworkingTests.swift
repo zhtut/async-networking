@@ -8,7 +8,7 @@ final class AsyncNetworkingTests: XCTestCase {
 
         // Defining Test Cases and Test Methods
         // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
-        let res = try await Networking.shared.send(request: .init(path: "https://www.baidu.com"))
+        let res = try await Networking.shared.send(request: .init(path: "https://www.baidu.com", printLog: true))
         if res.succeed {
             print("请求成功")
             print(res.bodyString ?? "")

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension TimeInterval {
+extension TimeInterval {
     var dateDesc: String? {
         var interval = self
         if interval > 16312039620 {
@@ -22,7 +22,7 @@ public extension TimeInterval {
     }
 }
 
-public extension Dictionary {
+extension Dictionary {
     var jsonString: String? {
         if let data = try? JSONSerialization.data(withJSONObject: self, options: .sortedKeys),
            let str = String(data: data, encoding: .utf8) {
@@ -32,7 +32,7 @@ public extension Dictionary {
     }
 }
 
-public extension Array {
+extension Array {
     var jsonString: String? {
         if let data = try? JSONSerialization.data(withJSONObject: self, options: .sortedKeys),
            let str = String(data: data, encoding: .utf8) {

@@ -36,7 +36,7 @@ open class FormData {
 
 public struct DecodeConfig {
     public var dataKey: String?
-    public var modelType: Decodable.Type?
+    public var modelType: Decodable.Type
 }
 
 /// 请求
@@ -77,6 +77,8 @@ public class Request {
     public var urlRequest: URLRequest?
     
     public weak var manager: Networking?
+    
+    var currentWorker: Worker?
 }
 
 public extension Request {

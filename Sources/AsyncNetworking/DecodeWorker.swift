@@ -1,0 +1,45 @@
+//
+//  DecodeWorker.swift
+//  AsyncNetworking
+//
+//  Created by shutut on 2024/8/27.
+//
+
+import Foundation
+
+struct DecodeWorker: Worker {
+    func process(_ response: Response, request: Request, networking: Networking) async throws -> Response {
+        // 解析Model
+        if response.succeed, let _ = request.decodeConfig {
+            try await response.decodeModel()
+        }
+        return response
+    }
+}
+
+struct LogWorker: Worker {
+    func process(_ response: Response, request: Request, networking: Networking) async throws -> Response {
+        if let p = request.printLog, p {
+            print(request.log)
+        }
+        return response
+    }
+    
+    func process(_ error: any Error, request: Request, networking: Networking) async throws -> any Error {
+        let r = request
+        if let p = r.printLog, p {
+            Task {
+                var message = r.log
+                var duration = -1.0
+                if let start = r.start {
+                    duration = Date().timeIntervalSince1970 * 1000.0 - start
+                }
+                message.append("\n------Error:\(duration)ms\n")
+                message.append("\(error)\n")
+                message.append("End<<<<<<<<<<")
+                print("\(message)")
+            }
+        }
+        return error
+    }
+}

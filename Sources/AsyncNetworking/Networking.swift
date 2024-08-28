@@ -19,9 +19,6 @@ public let kNetworkDefaultResourceTimeOut: TimeInterval = 60.0
 
 public struct NetworkConfig {
     
-    public var willSendRequestHandler: ((Request) throws -> Request)?
-    public var didReceiveResponseHandler: ((Response) throws -> Response)?
-    
     /// 接口请求超时时间
     public var timeOut = kNetworkDefaultTimeOut
     
@@ -44,6 +41,8 @@ public class Networking {
     public init(config: NetworkConfig) {
         self.config = config
     }
+    
+    public var pipelining = Pipelining(workers: [DecodeWorker()])
     
     func send(request: URLRequest) async throws -> (Data, URLResponse) {
 #if os(macOS) || os(iOS)
@@ -68,56 +67,78 @@ public class Networking {
     /// - Parameter request: 请求对象
     /// - Returns: 返回请求响应对象
     public func send(request: Request) async throws -> Response {
-        let sendRequest: Request
-        if let willHandler = config.willSendRequestHandler {
-            // 如果有加密，先调用加密
-            sendRequest = try willHandler(request)
-        } else {
-            sendRequest = request
-        }
-        sendRequest.manager = self
-        let urlRequest = try sendRequest.createURLRequest(config.baseURL)
-        sendRequest.urlRequest = urlRequest
+        var request = request
+        let urlRequest: URLRequest
+        
+        // 处理Request
+        var requestWorkIndex = 0
+        let requestWorkers = Array(pipelining.workers.reversed())
+        
         do {
-            sendRequest.start = Date().timeIntervalSince1970 * 1000.0
-            let (data, response) = try await send(request: urlRequest)
-            sendRequest.end = Date().timeIntervalSince1970 * 1000.0
-            guard let response = response as? HTTPURLResponse else {
+            // 先经过流水线，由工人处理下请求
+            // [*] <- 1 <- 2 <- 3 <- 4 <- request
+            // [*] -> 1 -> 2 -> 3 -> 4 -> Response
+            for i in requestWorkers.count-1...0 {
+                requestWorkIndex = i
+                let worker = requestWorkers[i]
+                request = try await worker.process(request, networking: self)
+            }
+            
+            request.manager = self
+            urlRequest = try request.createURLRequest(config.baseURL)
+            request.urlRequest = urlRequest
+        } catch  {
+            
+            var error = error
+            
+            // 发送请求之前的错误
+            for i in requestWorkIndex-1...0 {
+                let worker = requestWorkers[i]
+                error = try await worker.process(error, request: request, networking: self)
+            }
+            
+            throw error
+        }
+        
+        // 处理Response
+        
+        var responseWorkIndex = -1
+        let responseWorkers = pipelining.workers
+        
+        do {
+            
+            request.start = Date().timeIntervalSince1970 * 1000.0
+            let (data, urlResponse) = try await send(request: urlRequest)
+            request.end = Date().timeIntervalSince1970 * 1000.0
+            guard let httpResponse = urlResponse as? HTTPURLResponse else {
                 throw NetworkError.responseNotHttp
             }
-            var res = Response(request: sendRequest,
-                               body: data,
-                               urlResponse: response)
+            var response = Response(request: request,
+                                    body: data,
+                                    httpResponse: httpResponse)
             
-            // 如果配置有解密方法，则优先用解密方法解密一下
-            if res.succeed, let didHandler = config.didReceiveResponseHandler {
-                res = try didHandler(res)
+            // 收到数据，再次经过流水线，由工人处理下返回
+            // [*] <- 1 <- 2 <- 3 <- 4 <- request
+            // [*] -> 1 -> 2 -> 3 -> 4 -> Response
+            for i in 0..<responseWorkers.count {
+                responseWorkIndex = i
+                let worker = responseWorkers[i]
+                response = try await worker.process(response, request: request, networking: self)
             }
             
-            // 解析Model
-            if res.succeed, let _ = sendRequest.decodeConfig {
-                try await res.decodeModel()
-            }
-            
-            if let print = sendRequest.printLog, print {
-                res.log()
-            }
-            
-            return res
+            return response
         } catch {
-            if let p = sendRequest.printLog, p {
-                Task {
-                    var message = sendRequest.log
-                    var duration = -1.0
-                    if let start = sendRequest.start {
-                        duration = Date().timeIntervalSince1970 * 1000.0 - start
-                    }
-                    message.append("\n------Error:\(duration)ms\n")
-                    message.append("\(error)\n")
-                    message.append("End<<<<<<<<<<")
-                    print("\(message)")
-                }
+            
+            var error = error
+            
+            // 发生错误时，把错误往下发送
+            // [*] <- 1 <- 2 <- 3 <- 4 <- request
+            // [*] -> 1 -> 2 -> 3 -> 4 -> Response
+            for i in responseWorkIndex+1..<responseWorkers.count {
+                let worker = responseWorkers[i]
+                error = try await worker.process(error, request: request, networking: self)
             }
+            
             throw error
         }
     }
