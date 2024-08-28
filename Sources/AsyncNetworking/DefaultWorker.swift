@@ -20,7 +20,7 @@ struct DecodeWorker: Worker {
 struct LogWorker: Worker {
     func process(_ response: Response, request: Request, networking: Networking) async throws -> Response {
         if let p = request.printLog, p {
-            print(request.log)
+            response.log()
         }
         return response
     }
