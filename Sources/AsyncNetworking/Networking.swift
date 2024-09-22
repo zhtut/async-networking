@@ -42,7 +42,7 @@ public class Networking {
         self.config = config
     }
     
-    public var pipelining = Pipelining(workers: [DecodeWorker()])
+    public var pipelining = Pipelining(workers: [DecodeWorker(), LogWorker()])
     
     func send(request: URLRequest) async throws -> (Data, URLResponse) {
 #if os(macOS) || os(iOS)
