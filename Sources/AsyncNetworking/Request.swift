@@ -35,8 +35,14 @@ open class FormData {
 }
 
 public struct DecodeConfig {
+    
     public var dataKey: String?
     public var modelType: Decodable.Type
+    
+    public init(dataKey: String? = nil, modelType: Decodable.Type) {
+        self.dataKey = dataKey
+        self.modelType = modelType
+    }
 }
 
 /// 请求
@@ -52,14 +58,14 @@ public class Request {
     public var datas: [FormData]?
     public var printLog: Bool?
     
-    init(path: String,
-         method: HTTPMethod = .GET,
-         params: Any? = nil,
-         header: [String : String]? = nil,
-         timeOut: TimeInterval? = nil,
-         decodeConfig: DecodeConfig? = nil,
-         datas: [FormData]? = nil,
-         printLog: Bool? = nil) {
+    public init(path: String,
+                method: HTTPMethod = .GET,
+                params: Any? = nil,
+                header: [String : String]? = nil,
+                timeOut: TimeInterval? = nil,
+                decodeConfig: DecodeConfig? = nil,
+                datas: [FormData]? = nil,
+                printLog: Bool? = nil) {
         self.path = path
         self.method = method
         self.params = params
