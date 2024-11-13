@@ -8,17 +8,23 @@
 import Foundation
 
 @preconcurrency
-public protocol Worker: Sendable {
+public protocol RequestWorker: Sendable {
     func process(_ request: Request, networking: Networking) async throws -> Request
+}
+
+@preconcurrency
+public protocol ResponseWorker: Sendable {
     func process(_ response: Response, request: Request, networking: Networking) async throws -> Response
     func process(_ error: Error, request: Request, networking: Networking) async throws -> Error
 }
 
-public extension Worker {
+public extension RequestWorker {
     func process(_ request: Request, networking: Networking) async throws -> Request {
         return request
     }
-    
+}
+
+public extension ResponseWorker {
     func process(_ response: Response, request: Request, networking: Networking) async throws -> Response {
         return response
     }
@@ -29,5 +35,12 @@ public extension Worker {
 }
 
 public struct Pipelining: Sendable {
-    public var workers: [Worker]
+    
+    public var reqWorkers: [RequestWorker]
+    public var resWorkers: [ResponseWorker]
+    
+    public init(reqWorkers: [RequestWorker] = [], resWorkers: [ResponseWorker] = []) {
+        self.reqWorkers = reqWorkers
+        self.resWorkers = resWorkers
+    }
 }

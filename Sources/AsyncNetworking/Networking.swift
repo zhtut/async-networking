@@ -42,7 +42,7 @@ public class Networking {
         self.config = config
     }
     
-    public var pipelining = Pipelining(workers: [DecodeWorker(), LogWorker()])
+    public var pipelining = Pipelining(resWorkers: [LogWorker(), DecodeWorker()])
     
     func send(request: URLRequest) async throws -> (Data, URLResponse) {
 #if os(macOS) || os(iOS)
@@ -70,17 +70,9 @@ public class Networking {
         var request = request
         let urlRequest: URLRequest
         
-        // 处理Request
-        var requestWorkIndex = 0
-        let requestWorkers = Array(pipelining.workers.reversed())
-        
         do {
-            // 先经过流水线，由工人处理下请求
-            // [*] <- 1 <- 2 <- 3 <- 4 <- request
-            // [*] -> 1 -> 2 -> 3 -> 4 -> Response
-            for i in requestWorkers.count-1...0 {
-                requestWorkIndex = i
-                let worker = requestWorkers[i]
+            // 先经过流水线，由工人处理下请求，按照数组顺序进行处理
+            for worker in pipelining.reqWorkers {
                 request = try await worker.process(request, networking: self)
             }
             
@@ -91,9 +83,8 @@ public class Networking {
             
             var error = error
             
-            // 发送请求之前的错误
-            for i in requestWorkIndex-1...0 {
-                let worker = requestWorkers[i]
+            // 收到错误，不管是request worker的错误，还是接口的错误
+            for worker in pipelining.resWorkers {
                 error = try await worker.process(error, request: request, networking: self)
             }
             
@@ -101,9 +92,7 @@ public class Networking {
         }
         
         // 处理Response
-        
-        var responseWorkIndex = -1
-        let responseWorkers = pipelining.workers
+        var responseIndex: Int = 0
         
         do {
             
@@ -118,11 +107,9 @@ public class Networking {
                                     httpResponse: httpResponse)
             
             // 收到数据，再次经过流水线，由工人处理下返回
-            // [*] <- 1 <- 2 <- 3 <- 4 <- request
-            // [*] -> 1 -> 2 -> 3 -> 4 -> Response
-            for i in 0..<responseWorkers.count {
-                responseWorkIndex = i
-                let worker = responseWorkers[i]
+            for i in 0..<pipelining.resWorkers.count {
+                let worker = pipelining.resWorkers[i]
+                responseIndex = i
                 response = try await worker.process(response, request: request, networking: self)
             }
             
@@ -131,11 +118,9 @@ public class Networking {
             
             var error = error
             
-            // 发生错误时，把错误往下发送
-            // [*] <- 1 <- 2 <- 3 <- 4 <- request
-            // [*] -> 1 -> 2 -> 3 -> 4 -> Response
-            for i in responseWorkIndex+1..<responseWorkers.count {
-                let worker = responseWorkers[i]
+            // 发生错误时，把错误往下发送，上面处理的，就不再给他发送了
+            for i in responseIndex..<pipelining.resWorkers.count {
+                let worker = pipelining.resWorkers[i]
                 error = try await worker.process(error, request: request, networking: self)
             }
             

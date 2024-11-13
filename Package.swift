@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "AsyncNetworking",
+    name: "async-networking",
     platforms: [
         .macOS(.v10_15),
         .iOS(.v13)

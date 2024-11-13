@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct DecodeWorker: Worker {
+struct DecodeWorker: ResponseWorker {
     func process(_ response: Response, request: Request, networking: Networking) async throws -> Response {
         // 解析Model
         if response.succeed, let _ = request.decodeConfig {
@@ -17,7 +17,7 @@ struct DecodeWorker: Worker {
     }
 }
 
-struct LogWorker: Worker {
+struct LogWorker: ResponseWorker {
     func process(_ response: Response, request: Request, networking: Networking) async throws -> Response {
         if let p = request.printLog, p {
             response.log()

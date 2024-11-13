@@ -83,8 +83,6 @@ public class Request {
     public var urlRequest: URLRequest?
     
     public weak var manager: Networking?
-    
-    var currentWorker: Worker?
 }
 
 public extension Request {
