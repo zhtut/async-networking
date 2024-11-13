@@ -37,9 +37,9 @@ open class FormData {
 public struct DecodeConfig {
     
     public var dataKey: String?
-    public var modelType: Decodable.Type
+    public var modelType: Decodable.Type?
     
-    public init(dataKey: String? = nil, modelType: Decodable.Type) {
+    public init(dataKey: String? = nil, modelType: Decodable.Type?) {
         self.dataKey = dataKey
         self.modelType = modelType
     }

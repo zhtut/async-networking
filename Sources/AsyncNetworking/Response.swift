@@ -109,11 +109,17 @@ public extension Response {
 
 public extension Response {
     func decodeModel() async throws {
+        guard let config = request.decodeConfig else {
+            return
+        }
+        
         guard let json = await modelData() else { return }
-        guard let modelType = request.decodeConfig?.modelType else { return }
-        if JSONSerialization.isValidJSONObject(json) {
+        if let type = request.decodeConfig?.modelType,
+            JSONSerialization.isValidJSONObject(json) {
             let jsonData = try JSONSerialization.data(withJSONObject: json)
-            self.model = try JSONDecoder().decode(modelType.self, from: jsonData)
+            self.model = try JSONDecoder().decode(type, from: jsonData)
+        } else {
+            self.model = json
         }
     }
 }
