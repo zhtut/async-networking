@@ -19,16 +19,28 @@ public let kNetworkDefaultResourceTimeOut: TimeInterval = 60.0
 
 public struct NetworkConfig {
     
+    /// 基础url
+    public var baseURL: String
+    
     /// 接口请求超时时间
-    public var timeOut = kNetworkDefaultTimeOut
+    public var timeOut: TimeInterval
     
     /// 资源超时时间
-    public var resourceTimeOut = kNetworkDefaultResourceTimeOut
+    public var resourceTimeOut: TimeInterval
     
-    public var printLog = false
+    public var printLog: Bool
     
-    /// 基础url
-    public var baseURL = ""
+    public init(
+        baseURL: String = "",
+        timeOut: TimeInterval = kNetworkDefaultTimeOut,
+        resourceTimeOut: TimeInterval = kNetworkDefaultResourceTimeOut,
+        printLog: Bool = false,
+    ) {
+        self.timeOut = timeOut
+        self.resourceTimeOut = resourceTimeOut
+        self.printLog = printLog
+        self.baseURL = baseURL
+    }
 }
 
 /// 网络请求的管理器
@@ -38,7 +50,7 @@ public class Networking {
     
     public var session = URLSession.shared
     
-    public init(config: NetworkConfig) {
+    public init(config: NetworkConfig = .init()) {
         self.config = config
     }
     

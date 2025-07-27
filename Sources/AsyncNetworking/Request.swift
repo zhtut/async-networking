@@ -83,6 +83,11 @@ public class Request {
     public var urlRequest: URLRequest?
     
     public weak var manager: Networking?
+    
+    /// 是否使用body传数据
+    public var isUseBody: Bool {
+        method != .GET && method != .DELETE
+    }
 }
 
 public extension Request {
