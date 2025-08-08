@@ -28,35 +28,44 @@ public struct NetworkConfig {
     /// 资源超时时间
     public var resourceTimeOut: TimeInterval
     
-    public var printLog: Bool
+#if DEBUG
+    public var printLog: Bool = true
+#else
+    public var printLog: Bool = false
+#endif
     
     public init(
         baseURL: String = "",
         timeOut: TimeInterval = kNetworkDefaultTimeOut,
         resourceTimeOut: TimeInterval = kNetworkDefaultResourceTimeOut,
-        printLog: Bool = false,
     ) {
         self.timeOut = timeOut
         self.resourceTimeOut = resourceTimeOut
-        self.printLog = printLog
         self.baseURL = baseURL
     }
 }
 
 /// 网络请求的管理器
-public class Networking {
+open class Networking: NSObject {
     
-    public var config: NetworkConfig
+    open var config: NetworkConfig
     
-    public var session = URLSession.shared
+    open var session: URLSession!
+    
+    /// 代理队列
+    open var delegateQueue = OperationQueue()
     
     public init(config: NetworkConfig = .init()) {
         self.config = config
+        super.init()
+        self.session = URLSession(configuration: .default,
+                                  delegate: self,
+                                  delegateQueue: delegateQueue)
     }
     
-    public var pipelining = Pipelining(resWorkers: [LogWorker(), DecodeWorker()])
+    open var pipelining = Pipelining(resWorkers: [LogWorker(), DecodeWorker()])
     
-    func send(request: URLRequest) async throws -> (Data, URLResponse) {
+    open func send(request: URLRequest) async throws -> (Data, URLResponse) {
 #if os(macOS) || os(iOS)
         return try await session.data(for: request)
 #else
@@ -78,7 +87,7 @@ public class Networking {
     /// 发送请求
     /// - Parameter request: 请求对象
     /// - Returns: 返回请求响应对象
-    public func send(request: Request) async throws -> Response {
+    open func send(request: Request) async throws -> Response {
         var request = request
         let urlRequest: URLRequest
         
@@ -140,3 +149,12 @@ public class Networking {
         }
     }
 }
+
+extension Networking: URLSessionDelegate {
+    public func urlSession(_ session: URLSession,
+                           didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        // 进行证书认证
+        await ChallengeHandler.shared.authenticate(challenge: challenge)
+    }
+}
+

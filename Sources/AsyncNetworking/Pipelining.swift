@@ -28,7 +28,7 @@ public extension ResponseWorker {
     }
 }
 
-public class Pipelining: Sendable {
+public class Pipelining: @unchecked Sendable {
     
     public var reqWorkers: [RequestWorker]
     public var resWorkers: [ResponseWorker]

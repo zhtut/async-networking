@@ -10,7 +10,7 @@ import Foundation
 public extension Networking {
     
     /// 默认的实例
-    static let shared = Networking(config: NetworkConfig())
+    static let shared = Networking()
     
     static func send(request: Request) async throws -> Response {
         try await Networking.shared.send(request: request)
