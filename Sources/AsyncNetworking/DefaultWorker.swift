@@ -26,12 +26,13 @@ struct LogWorker: ResponseWorker {
     }
     
     func process(_ error: any Error, request: Request, networking: Networking) async throws -> any Error {
-        let r = request
-        if let p = r.printLog, p {
+        let message = request.log
+        let start = request.start
+        if let p = request.printLog, p {
             Task {
-                var message = r.log
+                var message = message
                 var duration = -1.0
-                if let start = r.start {
+                if let start {
                     duration = Date().timeIntervalSince1970 * 1000.0 - start
                 }
                 message.append("\n------Error:\(duration)ms\n")

@@ -19,7 +19,7 @@ public struct SSLPinning {
     }
 }
 
-public final class ChallengeHandler: NSObject {
+public final class ChallengeHandler: NSObject, @unchecked Sendable {
 
     public static let shared = ChallengeHandler()
 

@@ -109,7 +109,7 @@ public extension Response {
 
 public extension Response {
     func decodeModel() async throws {
-        guard let config = request.decodeConfig else {
+        guard request.decodeConfig != nil else {
             return
         }
         
@@ -126,12 +126,12 @@ public extension Response {
 
 extension Response {
     /// 请求的日志信息，组装成crul命令了，可以复制到cmd中再次调用
-    func printLog() async -> String {
+    var curlLog: String {
         let response = self
         var message = request.log
         message.append("\n------Response:\(response.duration ?? -1)ms\n")
         message.append("StatusCode:\(httpResponse.statusCode)\n")
-        if let bodyString = await bodyString() {
+        if let bodyString = bodyString {
             // 最长打印512个字符
             if bodyString.count > 10240 {
                 message.append("\(bodyString.prefix(512))")
@@ -145,9 +145,7 @@ extension Response {
     
     /// 打印日志信息，方便查看问题
     public func log() {
-        Task {
-            let log = await printLog()
-            print("\(log)")
-        }
+        let log = self.curlLog
+        print("\(log)")
     }
 }

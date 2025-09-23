@@ -17,7 +17,7 @@ public enum NetworkError: Error {
 public let kNetworkDefaultTimeOut: TimeInterval = 10.0
 public let kNetworkDefaultResourceTimeOut: TimeInterval = 60.0
 
-public struct NetworkConfig {
+public struct NetworkConfig: Sendable {
     
     /// 基础url
     public var baseURL: String
@@ -46,7 +46,7 @@ public struct NetworkConfig {
 }
 
 /// 网络请求的管理器
-open class Networking: NSObject {
+open class Networking: NSObject, @unchecked Sendable {
     
     open var config: NetworkConfig
     
