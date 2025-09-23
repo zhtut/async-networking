@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "async-networking",
+    name: "async-network",
     platforms: [
         .macOS(.v13),
         .iOS(.v16),
@@ -14,16 +14,16 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "AsyncNetworking",
-            targets: ["AsyncNetworking"]),
+            name: "AsyncNetwork",
+            targets: ["AsyncNetwork"]),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "AsyncNetworking"),
+            name: "AsyncNetwork"),
         .testTarget(
-            name: "AsyncNetworkingTests",
-            dependencies: ["AsyncNetworking"]),
+            name: "AsyncNetworkTests",
+            dependencies: ["AsyncNetwork"]),
     ]
 )
