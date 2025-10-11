@@ -5,6 +5,7 @@
 //  Created by zhtg on 2023/5/8.
 //
 
+#if canImport(CommonCrypto)
 import Foundation
 import CommonCrypto
 
@@ -61,25 +62,24 @@ public extension Data {
     var hex: String {
         return map { String(format: "%02hhX", $0) }.joined()
     }
-
+    
     var sha256: String {
         let data = self
-
+        
         // 创建一个指向内存缓冲区的指针，用于存储哈希结果
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(CC_SHA256_DIGEST_LENGTH))
         defer { buffer.deallocate() }
-
+        
         // 计算哈希值
         _ = data.withUnsafeBytes {
             CC_SHA256($0.baseAddress, CC_LONG(data.count), buffer)
         }
-
+        
         // 将哈希结果转换为 Data 对象
         let hashData = Data(bytes: buffer, count: Int(CC_SHA256_DIGEST_LENGTH))
         return hashData.hex
     }
 }
-
 
 extension SecTrust {
     /// 获取第一个证书
@@ -105,7 +105,7 @@ extension SecTrust {
         let data = SecCertificateCopyData(cert) as Data
         return data
     }
-
+    
     var hex: String? {
         certificate?.hex
     }
@@ -113,3 +113,5 @@ extension SecTrust {
         certificate?.sha256
     }
 }
+
+#endif

@@ -151,10 +151,12 @@ open class Networking: NSObject, @unchecked Sendable {
 }
 
 extension Networking: URLSessionDelegate {
+#if canImport(CommonCrypto)
     public func urlSession(_ session: URLSession,
                            didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         // 进行证书认证
         await ChallengeHandler.shared.authenticate(challenge: challenge)
     }
+#endif
 }
 
