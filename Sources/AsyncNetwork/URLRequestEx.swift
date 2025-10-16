@@ -120,12 +120,11 @@ public extension URLRequest {
         if params is [String: Any] {
             let dic = params as! [String : Any]
             var newURL = url
-            if let str = dic.urlQueryStr {
-                if url.contains("?") {
-                    newURL = "\(newURL)&\(str)"
-                } else {
-                    newURL = "\(newURL)?\(str)"
-                }
+            let str = dic.urlQueryString
+            if url.contains("?") {
+                newURL = "\(newURL)&\(str)"
+            } else {
+                newURL = "\(newURL)?\(str)"
             }
             return newURL
         }
@@ -134,30 +133,35 @@ public extension URLRequest {
     }
 }
 
-public extension Dictionary {
+public extension Dictionary where Key ==  String {
     /// URL参数拼接
-    var urlQueryStr: String? {
-        if count == 0 {
-            return nil
+    var urlQueryString: String {
+        let sortedKeys = self.keys.sorted()
+        
+        let queryItems = sortedKeys.compactMap { key -> String? in
+            guard let value = self[key] else { return nil }
+            
+            let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            
+            let stringValue: String
+            if let string = value as? String {
+                stringValue = string
+            } else if JSONSerialization.isValidJSONObject([value]) {
+                // 对于可以序列化为 JSON 的对象，使用 JSON 表示
+                if let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys),
+                   let jsonString = String(data: data, encoding: .utf8) {
+                    stringValue = jsonString
+                } else {
+                    stringValue = "\(value)"
+                }
+            } else {
+                stringValue = "\(value)"
+            }
+            
+            let encodedValue = stringValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            return "\(encodedKey)=\(encodedValue)"
         }
         
-        var components = URLComponents()
-        var queryItems = [URLQueryItem]()
-        for (key, value) in self {
-            let valueStr: String
-            if JSONSerialization.isValidJSONObject(value),
-               let data = try? JSONSerialization.data(withJSONObject: value, options: .init(rawValue: 0)),
-               let str = String(data: data, encoding: .utf8) {
-                valueStr = str
-            } else {
-                valueStr = "\(value)"
-            }
-            queryItems.append(.init(name: "\(key)", value: valueStr))
-        }
-        components.queryItems = queryItems
-        if let query = components.query {
-            return query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-        }
-        return nil
+        return queryItems.joined(separator: "&")
     }
 }
