@@ -146,7 +146,7 @@ public extension Dictionary where Key ==  String {
             let stringValue: String
             if let string = value as? String {
                 stringValue = string
-            } else if JSONSerialization.isValidJSONObject([value]) {
+            } else if JSONSerialization.isValidJSONObject(value) {
                 // 对于可以序列化为 JSON 的对象，使用 JSON 表示
                 if let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys),
                    let jsonString = String(data: data, encoding: .utf8) {
